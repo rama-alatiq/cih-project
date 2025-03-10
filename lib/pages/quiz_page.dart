@@ -1,5 +1,5 @@
-// import 'package:app_006/pages/home_page.dart';
 import 'package:app_006/pages/score_page.dart';
+import 'package:audioplayers/audioplayers.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:percent_indicator/linear_percent_indicator.dart';
@@ -20,6 +20,7 @@ class _QuizPageState extends State<QuizPage> {
   final List<Question> questions = AppQuestions.fetchQuestions();
   late PageController pageController;
   bool answered = false;
+  final AudioPlayer _audioPlayer = AudioPlayer();
 
   @override
   void initState() {
@@ -27,18 +28,26 @@ class _QuizPageState extends State<QuizPage> {
     pageController = PageController();
   }
 
+  void playSound(bool isCorrect) async {
+    String soundPath =
+        isCorrect ? "sounds/correctAnswer.wav" : "sounds/wrongAnswer.wav";
+    await _audioPlayer.setSource(AssetSource(soundPath));
+    await _audioPlayer.resume();
+  }
+
   void questionAnswered(int selectedIndex) {
     if (answered) return;
+    bool isCorrect = selectedIndex == questions[currentQuestionIdx].answerIndex;
 
     setState(() {
       selectedOptionIdx = selectedIndex;
       answered = true;
     });
 
-    if (selectedIndex == questions[currentQuestionIdx].answerIndex) {
+    if (isCorrect) {
       score++;
     }
-
+    playSound(isCorrect);
     Future.delayed(const Duration(seconds: 2), () {
       if (currentQuestionIdx < questions.length - 1) {
         setState(() {
@@ -160,7 +169,8 @@ class _QuizPageState extends State<QuizPage> {
                                               style: GoogleFonts.tajawal(
                                                 fontSize: 17,
                                                 fontWeight: FontWeight.w700,
-                                                color: const Color.fromARGB(255, 255, 255, 255),
+                                                color: const Color.fromARGB(
+                                                    255, 255, 255, 255),
                                               ),
                                               textAlign: TextAlign.center,
                                             ),
@@ -180,5 +190,12 @@ class _QuizPageState extends State<QuizPage> {
         ),
       ),
     );
+  }
+
+  @override
+  void dispose() {
+    _audioPlayer.dispose();
+    pageController.dispose();
+    super.dispose();
   }
 }
